@@ -1,0 +1,52 @@
+# MAAT policy configuration
+# Everything here can be overridden at runtime via the admin API / dashboard.
+
+defaults:
+  budget_usd: 1.00        # budget for any workflow not listed below
+  warn_at: 0.70           # fraction of budget -> Slack/event warning
+  downgrade_at: 0.90      # fraction of budget -> switch to cheaper tier
+  downgrade_model: null   # e.g. a small Gemma on Fireworks (set on launch day)
+  mode: enforce           # enforce = kill for real | observe = flag only
+
+workflows:
+  demo-rogue:
+    budget_usd: 0.25
+  demo-good:
+    budget_usd: 1.00
+  demo-observe:           # shadow mode: MAAT flags what it WOULD kill, blocks nothing.
+    mode: observe         # use this to tune thresholds on prod traffic risk-free,
+    budget_usd: 0.05      # or for legitimately repetitive agents (pollers, cron).
+  keyed-demo:             # key-based identity: the bearer key IS the workflow.
+    api_key: maat-sk-keyed-demo-ROTATE-ME
+    budget_usd: 0.50
+  # invoice-bot:
+  #   api_key: maat-sk-invoice-bot-CHANGE-ME
+  #   budget_usd: 5.00
+# Set MAAT_REQUIRE_AUTH=true to reject any request without a known workflow key.
+
+loop:
+  repeat_threshold: 3     # N identical calls inside the window -> kill
+  window_seconds: 120
+  similarity: 0.92        # near-duplicate last-user-message ratio counted as a repeat
+  rate_per_minute: 30     # above this -> throttle; above 2x -> kill
+
+# Zero-cost local tier: a vLLM OpenAI server on the same AMD GPU (ROCm).
+# When configured, workflows at downgrade_at fall back here instead of dying.
+# See deploy/amd-developer-cloud.md.
+# local_tier:
+#   base_url: http://vllm:8000/v1
+#   model: google/gemma-3-4b-it
+
+# USD per 1M tokens. Mock prices mirror real market tiers so the demo
+# economics are honest: -small is priced like a cheap workhorse model,
+# -large like a frontier model. Replace with revealed Fireworks pricing.
+pricing:
+  default:
+    input_per_1m: 0.20
+    output_per_1m: 0.80
+  gemma-mock-small:
+    input_per_1m: 0.10
+    output_per_1m: 0.40
+  gemma-mock-large:
+    input_per_1m: 3.00
+    output_per_1m: 15.00
