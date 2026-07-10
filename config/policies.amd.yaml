@@ -2,15 +2,18 @@
 # Selected via MAAT_CONFIG=/app/config/policies.amd.yaml (docker-compose.amd.yml does this).
 #
 # Tiers:
-#   normal    -> Fireworks AI serverless (AMD-hosted), Gemma 3 27B
-#   downgrade -> vLLM serving Gemma on the SAME AMD GPU via ROCm, $0
-#   fallback  -> if the local tier is down, a small Fireworks Gemma
+#   normal    -> Fireworks AI serverless: Kimi K2.6 (frontier-priced)
+#   downgrade -> Gemma 3 4B on the SAME AMD MI300X via vLLM/ROCm — $0, AMD-hosted Gemma
+#   fallback  -> if the local tier is unset/down: gpt-oss-120b on Fireworks
+#
+# Note: the hackathon Fireworks key exposes no serverless Gemma; Gemma in this
+# stack therefore lives where the prize says it should — on the AMD GPU itself.
 
 defaults:
   budget_usd: 1.00
   warn_at: 0.70
   downgrade_at: 0.90
-  downgrade_model: accounts/fireworks/models/gemma-3-4b-it  # used only if local_tier is unset/down
+  downgrade_model: accounts/fireworks/models/gpt-oss-120b  # used only if local_tier is down
   mode: enforce
 
 workflows:
@@ -24,8 +27,8 @@ workflows:
   keyed-demo:
     api_key: maat-sk-keyed-demo-ROTATE-ME
     budget_usd: 0.50
-  gpu-demo:               # tiny budget: crosses 90% within a few calls -> live $0-tier demo
-    budget_usd: 0.005
+  gpu-demo:               # tiny budget: crosses 90% within a few Kimi calls ->
+    budget_usd: 0.002     # live reroute to $0 Gemma on the MI300X
 
 loop:
   repeat_threshold: 3
@@ -38,21 +41,14 @@ local_tier:
   base_url: http://vllm:8000/v1
   model: google/gemma-3-4b-it
 
-# Fireworks serverless is size-tiered pricing (docs.fireworks.ai/serverless/pricing):
-# <4B $0.10 · 4–16B $0.20 · >16B $0.90 per 1M tokens, input and output alike.
+# Real Fireworks serverless prices (fireworks.ai/pricing, July 2026).
 pricing:
   default:
     input_per_1m: 0.20
-    output_per_1m: 0.20
-  accounts/fireworks/models/gemma-3-27b-it:
-    input_per_1m: 0.90
-    output_per_1m: 0.90
-  accounts/fireworks/models/gemma-3-12b-it:
-    input_per_1m: 0.20
-    output_per_1m: 0.20
-  accounts/fireworks/models/gemma-3-4b-it:
-    input_per_1m: 0.20
-    output_per_1m: 0.20
-  accounts/fireworks/models/gemma-3-1b-it:
-    input_per_1m: 0.10
-    output_per_1m: 0.10
+    output_per_1m: 0.80
+  accounts/fireworks/models/kimi-k2p6:
+    input_per_1m: 0.95
+    output_per_1m: 4.00
+  accounts/fireworks/models/gpt-oss-120b:
+    input_per_1m: 0.15
+    output_per_1m: 0.60
