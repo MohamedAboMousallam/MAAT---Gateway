@@ -27,8 +27,8 @@ A newer wave of agent circuit breakers is emerging — gateway kill switches (Lo
  │  ledger · Slack alerts · live dashboard (/)    │
  └────────────────────────────────────────────────┘
         ▼                          ▼ (near budget)
- Fireworks AI                local vLLM on AMD GPU
- (AMD-hosted models)         via ROCm — $0 tier
+ Fireworks AI                Gemma 3 on AMD MI300X
+ (Kimi K2.6 serverless)      via vLLM/ROCm — $0 tier
 ```
 
 A killed workflow gets an OpenAI-shaped `403`, so SDKs raise cleanly instead of retrying. Enforcement lives outside the model's context, so a prompt-injected or jailbroken agent cannot talk its way past it. Every killed workflow gets a one-click **incident report**: timeline, per-call ledger, and the measured burn rate projected forward. **Observe mode** runs the same judgments in shadow — it flags what it *would* kill without blocking, so you can tune thresholds on production traffic risk-free (and exempt legitimately repetitive agents like pollers).
@@ -46,14 +46,21 @@ python demo/rogue_agent.py          # retry loop: killed on the 3rd call
 
 The rogue agent carries a ~2k-token context on a frontier-priced mock model, like real loops do. Watch it take the red **JUDGED** stamp, then read the extrapolation it prints: the measured burn rate of the loop MAAT just stopped, projected over an unattended weekend.
 
-## Switching to real models (launch day)
+## The real deployment (AMD Developer Cloud)
+
+Live on an MI300X droplet for judging — dashboard: **http://129.212.191.62:8080**
 
 ```bash
-cp .env.example .env    # UPSTREAM_MODE=fireworks, UPSTREAM_API_KEY=fw_...
-docker compose up -d
+cp .env.example .env    # UPSTREAM_MODE=fireworks, UPSTREAM_API_KEY=fw_..., HF_TOKEN=hf_...
+docker compose -f docker-compose.yml -f docker-compose.amd.yml up --build -d
 ```
 
-Update `config/policies.yaml` with the revealed model IDs and real per-1M-token pricing, and set a small Gemma as `downgrade_model`. Agents keep the same `base_url`. For the on-GPU $0 tier, see [deploy/amd-developer-cloud.md](deploy/amd-developer-cloud.md).
+One command starts both tiers on one AMD GPU instance ([full steps](deploy/amd-developer-cloud.md)):
+
+- **Primary tier**: Fireworks AI serverless — Kimi K2.6 at real prices ($0.95/$4.00 per 1M tokens, see [config/policies.amd.yaml](config/policies.amd.yaml))
+- **$0 downgrade tier**: Gemma 3 4B served by vLLM **on the MI300X via ROCm** — near-budget workflows degrade to AMD-hosted Gemma instead of dying
+
+Verified on real traffic: a retry loop carrying ~4.9k tokens/call on Kimi K2.6 was killed on its 3rd identical call — $0.0124 burned in 8.3s, a measured pace of ~$322 over an unattended weekend. A workflow at 95% budget kept answering, rerouted to on-GPU Gemma with its cost meter frozen.
 
 ## Workflow identity
 
@@ -70,7 +77,7 @@ Assign each workflow an `api_key` in `policies.yaml`; the bearer key resolves th
 
 ## Running on AMD
 
-Built for the AMD Developer Hackathon ACT II (Unicorn Track). The remote tier targets Fireworks AI's AMD-hosted models (Gemma among them); the gateway deploys on an AMD Developer Cloud instance; and the downgrade tier is a vLLM OpenAI server on the same AMD GPU via ROCm, so near-budget workflows degrade gracefully to $0 on-GPU inference instead of dying. Full steps: [deploy/amd-developer-cloud.md](deploy/amd-developer-cloud.md).
+Built for the AMD Developer Hackathon ACT II (Unicorn Track). The gateway runs on an AMD Developer Cloud MI300X droplet; the remote tier is Fireworks AI serverless; the downgrade tier is Gemma 3 4B on a vLLM OpenAI server on the same AMD GPU via ROCm — so Gemma lives where it counts, on AMD silicon, and near-budget workflows degrade to $0 on-GPU inference instead of dying. Full steps: [deploy/amd-developer-cloud.md](deploy/amd-developer-cloud.md).
 
 ## Overhead
 
