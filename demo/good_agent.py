@@ -17,7 +17,7 @@ TASKS = [
     "Summarize the tradeoffs of ECS Fargate vs EC2 launch type in two sentences.",
     "Write a one-line commit message for adding retry backoff to a Lambda.",
     "Name three signals that an AI agent is stuck in a loop.",
-    "Explain per-workflow budget attribution to a finance stakeholder in 30 words.",
+    "In one sentence, explain per-workflow budget attribution to a finance stakeholder.",
 ]
 
 print(f"good-agent → {GATEWAY} (model={MODEL})\n")
