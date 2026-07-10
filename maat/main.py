@@ -82,6 +82,11 @@ def policy_for(wf_id: str) -> dict:
     return p
 
 
+def usd(v: float) -> str:
+    """$-format that stays legible for sub-cent demo budgets."""
+    return f"${v:.2f}" if v >= 0.05 else f"${v:.4f}"
+
+
 def guard_error(message: str, code: str, status: int = 403) -> JSONResponse:
     """OpenAI-shaped error so agent SDKs raise cleanly instead of retrying."""
     return JSONResponse(
@@ -96,7 +101,7 @@ async def kill_workflow(wf_id: str, reason: str, spent: float, budget: float, et
     store.add_event(wf_id, "kill", etype, reason)
     await alerter.send(
         f"MAAT ⚖️ KILLED workflow `{wf_id}` — {reason}. "
-        f"Spent ${spent:.4f} of ${budget:.2f}. Resume from the dashboard."
+        f"Spent {usd(spent)} of {usd(budget)}. Resume from the dashboard."
     )
 
 
@@ -109,7 +114,7 @@ async def observe_flag(wf_id: str, etype: str, reason: str, spent: float, budget
     store.add_event(wf_id, "warn", etype, f"OBSERVE — would kill: {reason}")
     await alerter.send(
         f"MAAT ⚖️ [observe] would kill `{wf_id}` — {reason} "
-        f"(${spent:.4f}/${budget:.2f}). Enforcement is off for this workflow.")
+        f"({usd(spent)}/{usd(budget)}). Enforcement is off for this workflow.")
 
 
 # --------------------------------------------------------------------------
@@ -151,7 +156,7 @@ async def chat_completions(request: Request):
     tier = budget_tier(spent, budget, pol["warn_at"], pol["downgrade_at"])
     is_local = False
     if tier == "exceeded":
-        reason = f"budget exhausted (${spent:.4f} of ${budget:.2f})"
+        reason = f"budget exhausted ({usd(spent)} of {usd(budget)})"
         if enforcing:
             await kill_workflow(wf_id, reason, spent, budget, "budget_kill")
             return guard_error(f"workflow '{wf_id}' {reason}", "budget_exceeded")
@@ -170,7 +175,7 @@ async def chat_completions(request: Request):
 
     elif tier == "warn" and not wf["warned"]:
         store.update_workflow(wf_id, warned=1)
-        msg = f"at {spent / budget:.0%} of ${budget:.2f} budget"
+        msg = f"at {spent / budget:.0%} of {usd(budget)} budget"
         store.add_event(wf_id, "warn", "budget_warn", msg)
         await alerter.send(f"MAAT ⚖️ `{wf_id}` {msg}")
 
@@ -213,7 +218,7 @@ async def chat_completions(request: Request):
     async def settle_and_judge(usage: dict) -> float:
         new_spent = settle(usage)
         if new_spent >= budget:
-            reason = f"budget exhausted (${new_spent:.4f} of ${budget:.2f})"
+            reason = f"budget exhausted ({usd(new_spent)} of {usd(budget)})"
             if enforcing:
                 await kill_workflow(wf_id, reason, new_spent, budget, "budget_kill")
             else:
@@ -361,7 +366,7 @@ async def admin_report(wf_id: str):
         "=" * (24 + len(wf_id)),
         f"status:  {wf['status'].upper()}"
         + (f"  ({wf['killed_reason']})" if wf["killed_reason"] else ""),
-        f"spend:   ${wf['spent_usd']:.4f} of ${wf['budget_usd']:.2f} budget"
+        f"spend:   ${wf['spent_usd']:.4f} of {usd(wf['budget_usd'])} budget"
         f"  ·  {wf['calls']} calls",
         "",
         "Timeline",

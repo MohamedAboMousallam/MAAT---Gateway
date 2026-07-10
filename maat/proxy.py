@@ -35,6 +35,12 @@ class Upstream:
         self.api_key = api_key
         self._client = httpx.AsyncClient(timeout=120)
 
+    @property
+    def _headers(self) -> dict:
+        # No header at all when keyless (e.g. local vLLM): an empty
+        # "Bearer " value is an illegal header and httpx refuses to send it.
+        return {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+
     # ---- non-streaming ------------------------------------------------------
     async def complete(self, payload: dict) -> tuple[int, dict]:
         if self.mode == "mock":
@@ -43,7 +49,7 @@ class Upstream:
             r = await self._client.post(
                 f"{self.base_url}/chat/completions",
                 json=payload,
-                headers={"Authorization": f"Bearer {self.api_key}"},
+                headers=self._headers,
             )
         except httpx.TimeoutException:
             return 504, {"error": {"message": "upstream timed out",
@@ -77,7 +83,7 @@ class Upstream:
             "POST",
             f"{self.base_url}/chat/completions",
             json=payload,
-            headers={"Authorization": f"Bearer {self.api_key}"},
+            headers=self._headers,
         ) as r:
             async for line in r.aiter_lines():
                 if line.startswith("data: "):
