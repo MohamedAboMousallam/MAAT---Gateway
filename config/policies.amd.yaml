@@ -27,8 +27,10 @@ workflows:
   keyed-demo:
     api_key: maat-sk-keyed-demo-ROTATE-ME
     budget_usd: 0.50
-  gpu-demo:               # tiny budget: crosses 90% within a few Kimi calls ->
-    budget_usd: 0.002     # live reroute to $0 Gemma on the MI300X
+  gpu-demo:               # demo pacing: thresholds sized so 2-3 Kimi calls cross
+    budget_usd: 0.005     # the downgrade line deterministically (per-call cost
+    warn_at: 0.15         # varies with output length), and the kill line stays
+    downgrade_at: 0.22    # out of reach -> live reroute to $0 Gemma on the MI300X
 
 loop:
   repeat_threshold: 3

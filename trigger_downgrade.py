@@ -5,11 +5,12 @@ Run:  python trigger_downgrade.py            (against mock)
       DEMO_MODEL=accounts/fireworks/models/gemma-3-27b-it python trigger_downgrade.py
 """
 import os
-from openai import OpenAI
+from openai import OpenAI, PermissionDeniedError
 
 MODEL = os.getenv("DEMO_MODEL", "gemma-mock-large")
 c = OpenAI(base_url=os.getenv("MAAT_URL", "http://localhost:8080/v1"),
-           api_key="demo", default_headers={"X-Workflow-Id": "gpu-demo"})
+           api_key="demo", max_retries=0,
+           default_headers={"X-Workflow-Id": "gpu-demo"})
 TASKS = [
     "Explain ECS task placement in one sentence.",
     "One-line commit message for fixing a Lambda timeout.",
@@ -21,7 +22,12 @@ TASKS = [
     "What is graceful degradation? One sentence.",
 ]
 for i, t in enumerate(TASKS, 1):
-    r = c.chat.completions.create(model=MODEL, max_tokens=150, messages=[
-        {"role": "system", "content": "Answer directly and concisely. No preamble."},
-        {"role": "user", "content": t}])
+    try:
+        r = c.chat.completions.create(model=MODEL, max_tokens=150, messages=[
+            {"role": "system", "content": "Answer directly and concisely. No preamble."},
+            {"role": "user", "content": t}])
+    except PermissionDeniedError as e:
+        detail = e.body.get("message") if isinstance(e.body, dict) else str(e)
+        print(f"\n  ⚖  {detail}")
+        break
     print(f"call {i}: {r.model} -> {r.choices[0].message.content[:70]}")

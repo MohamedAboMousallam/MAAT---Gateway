@@ -70,9 +70,9 @@ Click **Incident report** — show the timeline and projection.
 python trigger_downgrade.py
 ```
 
-Expected: ~3 calls answered by Kimi, then the `downgraded` badge appears and
-replies switch to `google/gemma-3-4b-it` — the Gemma on THIS GPU — while the
-cost meter freezes.
+Expected: two or three calls answered by Kimi (a gold budget warning lands in
+the ledger), then the `downgraded` badge appears and replies switch to
+`google/gemma-3-4b-it` — the Gemma on THIS GPU — while the cost meter freezes.
 
 > "Near budget, MAAT doesn't execute your workflow — it reroutes it to Gemma
 > on the same AMD GPU at zero dollars. The agent never stops answering."
