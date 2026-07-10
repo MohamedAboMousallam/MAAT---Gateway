@@ -22,7 +22,7 @@ TASKS = [
 
 print(f"good-agent → {GATEWAY} (model={MODEL})\n")
 for i, task in enumerate(TASKS, 1):
-    r = client.chat.completions.create(model=MODEL, max_tokens=150, messages=[
+    r = client.chat.completions.create(model=MODEL, max_tokens=300, messages=[
         {"role": "system", "content": "Answer directly and concisely. No preamble."},
         {"role": "user", "content": task}])
     text = (r.choices[0].message.content or "").replace("\n", " ")[:90]

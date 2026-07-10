@@ -41,11 +41,13 @@ docker ps               # maat gateway + vLLM serving Gemma on that GPU
 ## Shot 3 — normal traffic (0:45–1:05, split)
 
 ```bash
-python demo/good_agent.py
+DEMO_MODEL=accounts/fireworks/models/gpt-oss-120b python demo/good_agent.py
 ```
 
-> "A well-behaved agent: four Kimi K2.6 calls through Fireworks, every token
-> metered and attributed on the ledger." (Dashboard: demo-good card fills.)
+> "A well-behaved agent: four calls to gpt-oss-120b through Fireworks, every
+> token metered and attributed on the ledger." (Dashboard: demo-good card
+> fills.) Note: the inline override is deliberate — the rogue and downgrade
+> shots use Kimi K2.6 from the pre-flight export.
 
 ## Shot 4 — the kill (1:05–1:50, split) ★ the money shot
 
