@@ -6,13 +6,21 @@ and a terminal SSH'd into the MI300X droplet at `/root/maat`.
 
 ## Pre-flight (before recording)
 
+SSH into the droplet, then set up the demo shell — all four lines matter
+(the demos need the venv's OpenAI SDK):
+
 ```bash
-bash demo/reset_demo.sh            # fresh ledger, vLLM stays up
+cd /root/maat
+source /root/demo-venv/bin/activate            # OpenAI SDK lives here
 export DEMO_MODEL=accounts/fireworks/models/kimi-k2p6
+bash demo/reset_demo.sh                        # fresh ledger, vLLM stays up
 ```
 
+Optional, for a cleaner `docker ps` frame in shot 2:
+`docker stop rocm` (the quickstart JupyterLab — restore later with `docker start rocm`).
+
 Browser: dashboard open, zoom so 2–3 workflow cards fill the frame.
-Terminal: font large, `cd /root/maat`.
+Terminal: font large, `clear` before each shot.
 
 ## Shot 1 — hook (0:00–0:20, title or dashboard)
 

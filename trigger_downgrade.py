@@ -21,6 +21,7 @@ TASKS = [
     "What is graceful degradation? One sentence.",
 ]
 for i, t in enumerate(TASKS, 1):
-    r = c.chat.completions.create(model=MODEL, max_tokens=150,
-                                  messages=[{"role": "user", "content": t}])
+    r = c.chat.completions.create(model=MODEL, max_tokens=150, messages=[
+        {"role": "system", "content": "Answer directly and concisely. No preamble."},
+        {"role": "user", "content": t}])
     print(f"call {i}: {r.model} -> {r.choices[0].message.content[:70]}")
