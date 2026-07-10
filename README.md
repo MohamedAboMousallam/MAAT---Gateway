@@ -62,6 +62,20 @@ One command starts both tiers on one AMD GPU instance ([full steps](deploy/amd-d
 
 Verified on real traffic: a retry loop carrying ~4.9k tokens/call on Kimi K2.6 was killed on its 3rd identical call — $0.0124 burned in 8.3s, a measured pace of ~$322 over an unattended weekend. A workflow at 95% budget kept answering, rerouted to on-GPU Gemma with its cost meter frozen.
 
+### Try it against the live gateway
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://129.212.191.62:8080/v1",
+                api_key="maat-sk-keyed-demo-ROTATE-ME")  # public on purpose — read on
+r = client.chat.completions.create(model="accounts/fireworks/models/gpt-oss-120b",
+                                   max_tokens=60,
+                                   messages=[{"role": "user", "content": "Who weighs the tokens?"}])
+print(r.choices[0].message.content)
+```
+
+Yes, that key is public on purpose. It is bound to the `keyed-demo` workflow with a **$0.50 hard budget** — a leaked key bounded by MAAT costs at most its budget, which is the product. Unknown keys are rejected (`MAAT_REQUIRE_AUTH=true` on the deployment), the dashboard is read-only for visitors, and your call shows up on the live ledger.
+
 ## Workflow identity
 
 ```python
