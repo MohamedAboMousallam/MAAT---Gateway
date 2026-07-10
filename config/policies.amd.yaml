@@ -1,0 +1,58 @@
+# MAAT policies — AMD Developer Cloud launch config (real models, real prices).
+# Selected via MAAT_CONFIG=/app/config/policies.amd.yaml (docker-compose.amd.yml does this).
+#
+# Tiers:
+#   normal    -> Fireworks AI serverless (AMD-hosted), Gemma 3 27B
+#   downgrade -> vLLM serving Gemma on the SAME AMD GPU via ROCm, $0
+#   fallback  -> if the local tier is down, a small Fireworks Gemma
+
+defaults:
+  budget_usd: 1.00
+  warn_at: 0.70
+  downgrade_at: 0.90
+  downgrade_model: accounts/fireworks/models/gemma-3-4b-it  # used only if local_tier is unset/down
+  mode: enforce
+
+workflows:
+  demo-rogue:
+    budget_usd: 0.25
+  demo-good:
+    budget_usd: 1.00
+  demo-observe:           # shadow mode: flags what it WOULD kill, blocks nothing
+    mode: observe
+    budget_usd: 0.05
+  keyed-demo:
+    api_key: maat-sk-keyed-demo-ROTATE-ME
+    budget_usd: 0.50
+  gpu-demo:               # tiny budget: crosses 90% within a few calls -> live $0-tier demo
+    budget_usd: 0.005
+
+loop:
+  repeat_threshold: 3
+  window_seconds: 120
+  similarity: 0.92
+  rate_per_minute: 30
+
+# The $0 tier: vLLM OpenAI server on the same AMD GPU (see docker-compose.amd.yml).
+local_tier:
+  base_url: http://vllm:8000/v1
+  model: google/gemma-3-4b-it
+
+# Fireworks serverless is size-tiered pricing (docs.fireworks.ai/serverless/pricing):
+# <4B $0.10 · 4–16B $0.20 · >16B $0.90 per 1M tokens, input and output alike.
+pricing:
+  default:
+    input_per_1m: 0.20
+    output_per_1m: 0.20
+  accounts/fireworks/models/gemma-3-27b-it:
+    input_per_1m: 0.90
+    output_per_1m: 0.90
+  accounts/fireworks/models/gemma-3-12b-it:
+    input_per_1m: 0.20
+    output_per_1m: 0.20
+  accounts/fireworks/models/gemma-3-4b-it:
+    input_per_1m: 0.20
+    output_per_1m: 0.20
+  accounts/fireworks/models/gemma-3-1b-it:
+    input_per_1m: 0.10
+    output_per_1m: 0.10

@@ -1,0 +1,34 @@
+# AMD Developer Cloud overlay: MAAT (Fireworks upstream) + vLLM on the MI300X via ROCm.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.amd.yml up --build -d
+#
+# Requires in .env: UPSTREAM_MODE=fireworks, UPSTREAM_API_KEY=fw_..., HF_TOKEN=hf_...
+services:
+  maat:
+    environment:
+      - MAAT_CONFIG=/app/config/policies.amd.yaml
+    depends_on:
+      - vllm
+
+  vllm:
+    image: vllm/vllm-openai-rocm:latest
+    command: --model ${VLLM_MODEL:-google/gemma-3-4b-it} --port 8000 --max-model-len 8192
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+    ipc: host
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    ports:
+      - "127.0.0.1:8000:8000"   # host-local only; MAAT reaches it on the compose network
+
+volumes:
+  hf-cache:
