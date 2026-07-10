@@ -13,8 +13,9 @@ from openai import OpenAI, PermissionDeniedError
 
 GATEWAY = os.getenv("MAAT_URL", "http://localhost:8080/v1")
 MODEL = os.getenv("DEMO_MODEL", "gemma-mock-large")
+MAX_TOKENS = int(os.getenv("DEMO_MAX_TOKENS", "400"))  # keeps reasoning models snappy
 
-client = OpenAI(base_url=GATEWAY, api_key="demo-key",
+client = OpenAI(base_url=GATEWAY, api_key="demo-key", max_retries=0,
                 default_headers={"X-Workflow-Id": "demo-rogue"})
 
 # Real runaway loops carry real context: here, a partially-read CSV the
@@ -33,7 +34,8 @@ t0 = time.time()
 for attempt in range(1, 51):
     try:
         r = client.chat.completions.create(
-            model=MODEL, messages=[{"role": "user", "content": PROMPT}])
+            model=MODEL, max_tokens=MAX_TOKENS,
+            messages=[{"role": "user", "content": PROMPT}])
         u = r.usage
         print(f"  attempt {attempt:2d}: {u.prompt_tokens}->{u.completion_tokens} tok "
               "— tool still failing, retrying same call…")

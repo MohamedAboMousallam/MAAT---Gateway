@@ -39,11 +39,18 @@ class Upstream:
     async def complete(self, payload: dict) -> tuple[int, dict]:
         if self.mode == "mock":
             return 200, await self._mock_completion(payload)
-        r = await self._client.post(
-            f"{self.base_url}/chat/completions",
-            json=payload,
-            headers={"Authorization": f"Bearer {self.api_key}"},
-        )
+        try:
+            r = await self._client.post(
+                f"{self.base_url}/chat/completions",
+                json=payload,
+                headers={"Authorization": f"Bearer {self.api_key}"},
+            )
+        except httpx.TimeoutException:
+            return 504, {"error": {"message": "upstream timed out",
+                                   "type": "upstream_error", "code": "upstream_timeout"}}
+        except httpx.HTTPError as e:
+            return 502, {"error": {"message": f"upstream unreachable ({e.__class__.__name__})",
+                                   "type": "upstream_error", "code": "upstream_unreachable"}}
         try:
             body = r.json()
         except Exception:
