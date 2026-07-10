@@ -69,7 +69,7 @@ from openai import OpenAI
 client = OpenAI(base_url="http://129.212.191.62:8080/v1",
                 api_key="maat-sk-keyed-demo-ROTATE-ME")  # public on purpose — read on
 r = client.chat.completions.create(model="accounts/fireworks/models/gpt-oss-120b",
-                                   max_tokens=60,
+                                   max_tokens=300,  # reasoning models think before they speak
                                    messages=[{"role": "user", "content": "Who weighs the tokens?"}])
 print(r.choices[0].message.content)
 ```
